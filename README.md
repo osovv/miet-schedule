@@ -7,9 +7,9 @@ The problem is that needed content on the page is controlled by JavaScript, whic
 
 ## Task List
 - [x] Get needed HTML tags from page.
-- [] Parse table with schedule in HTML format.
-- [] Be able to show schedule for today (in any format)
-- [] Be able to show schedule for a week (in any format)
-- [] Be able to show schedule for exact date (in any format)
-- [] Create fully working API
-- [] Cache results
+- [ ] Parse table with schedule in HTML format.
+- [ ] Be able to show schedule for today (in any format)
+- [ ] Be able to show schedule for a week (in any format)
+- [ ] Be able to show schedule for exact date (in any format)
+- [ ] Create fully working API
+- [ ] Cache results
