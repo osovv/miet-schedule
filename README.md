@@ -1,0 +1,4 @@
+- [] Be able to show schedule for today
+- [] Be able to show schedule for a week
+- [] Be able to show schedule for exact date
+- [] Cache results
