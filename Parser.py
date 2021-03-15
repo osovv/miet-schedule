@@ -13,6 +13,6 @@ with webdriver.Firefox(options=firefox_options, service_log_path='./log/geckodri
     driver.get(url)
     src = driver.page_source
     soup = BeautifulSoup(src, "lxml")
-    groups = soup.find(class_='group select2-hidden-accessible')
+    groups = soup.find(class_='group')
     group_names = tuple([i.string for i in groups.find_all('option') if i.string is not None])
     print(group_names)
