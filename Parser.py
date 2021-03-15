@@ -11,9 +11,8 @@ firefox_options = webdriver.FirefoxOptions()
 firefox_options.headless = True
 with webdriver.Firefox(options=firefox_options, service_log_path='./log/geckodriver.log') as driver:
     driver.get(url)
-
     src = driver.page_source
     soup = BeautifulSoup(src, "lxml")
-
-    groups = tuple([i.string for i in soup.findAll('option') if i.string is not None])
-    print(groups)
+    groups = soup.find(class_='group select2-hidden-accessible')
+    group_names = tuple([i.string for i in groups.find_all('option') if i.string is not None])
+    print(group_names)
