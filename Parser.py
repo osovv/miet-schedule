@@ -30,6 +30,9 @@ class Parser:
         self.semester_title = None
         self.week_name = None
         self.week_type = None
+        self.days_names = None
+        self.days_types = None
+        self.schedule_type = None
 
     def __del__(self):
         self.driver.close()
@@ -84,14 +87,16 @@ class Parser:
             self.click_dropdown_menu()
             if period == 'today':
                 self.choose_day_schedule()
+                self.schedule_type = 'today'
             if period == 'week':
                 self.choose_week_schedule()
+                self.schedule_type = 'week'
             soup = BeautifulSoup(self.driver.page_source, "lxml")
             schedule = soup.find(class_='schedule')
             tabs = schedule.find_all('tr')
             if tabs:
-                self.table_header = schedule.find_all('thead')
-                self.table_content = schedule.find_all('tbody')
+                self.table_header = schedule.find('thead')
+                self.table_content = schedule.find('tbody')
                 self.semester = soup.find(class_='semestr')
                 return True
             return False
@@ -112,6 +117,24 @@ class Parser:
                 self.week_type = 3
             # self.semester_title = self.semester_title[:-2]
 
+    def parse_table_header(self):
+        if self.table_header is not None:
+            if self.schedule_type == 'today':
+                self.days_names = []
+                for th in self.table_header.find_all('th', class_='day'):
+                    th_date, th_day_name = th.text.split(' ')
+                    th_day_name = th_day_name[1:-1]
+                    self.days_names.append((th_day_name, th_date))
+            elif self.schedule_type == 'week':
+                self.days_names = [
+                    ('Понедельник',),
+                    ('Вторник',),
+                    ('Среда',),
+                    ('Четверг',),
+                    ('Пятница',),
+                    ('Суббота',),
+                ]
+
 if __name__ == '__main__':
     parser = Parser()
     parser.get_table()
@@ -119,11 +142,13 @@ if __name__ == '__main__':
     parser.choose_group('ПИН-21')
     parser.choose_day_schedule()
     parser.choose_week_schedule()
-    parser.get_table('today')
+    parser.get_table('week')
     print(parser.table_header)
     print(parser.table_content)
     parser.parse_semester()
+    parser.parse_table_header()
     print(parser.semester)
     print(parser.semester_title)
     print(parser.week_name)
     print(parser.week_type)
+    print(parser.days_names)
