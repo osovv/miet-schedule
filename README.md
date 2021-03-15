@@ -13,3 +13,5 @@ The problem is that needed content on the page is controlled by JavaScript, whic
 - [ ] Be able to show schedule for exact date (in any format)
 - [ ] Create fully working API
 - [ ] Cache results
+
+## Inspired by [this](https://youtu.be/h5WPYGicHrQ) video.
