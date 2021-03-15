@@ -27,6 +27,9 @@ class Parser:
         self.table_content = None
         self.table_header = None
         self.semester = None
+        self.semester_title = None
+        self.week_name = None
+        self.week_type = None
 
     def __del__(self):
         self.driver.close()
@@ -89,13 +92,25 @@ class Parser:
             if tabs:
                 self.table_header = schedule.find_all('thead')
                 self.table_content = schedule.find_all('tbody')
-                self.semester = soup.find_all(class_='semestr')
+                self.semester = soup.find(class_='semestr')
                 return True
             return False
         else:
             print('Must choose group before getting table.')
             return False
 
+    def parse_semester(self):
+        if self.semester is not None:
+            self.semester_title, self.week_name = self.semester.text.split('.')
+            if self.week_name.startswith('1-й ч'):
+                self.week_type = 0
+            elif self.week_name.startswith('1-й з'):
+                self.week_type = 1
+            elif self.week_name.startswith('2-й ч'):
+                self.week_type = 2
+            elif self.week_name.startswith('2-й з'):
+                self.week_type = 3
+            # self.semester_title = self.semester_title[:-2]
 
 if __name__ == '__main__':
     parser = Parser()
@@ -107,4 +122,8 @@ if __name__ == '__main__':
     parser.get_table('today')
     print(parser.table_header)
     print(parser.table_content)
+    parser.parse_semester()
     print(parser.semester)
+    print(parser.semester_title)
+    print(parser.week_name)
+    print(parser.week_type)
