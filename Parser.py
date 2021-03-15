@@ -26,6 +26,7 @@ class Parser:
         self.group_chosen = False
         self.table_content = None
         self.table_header = None
+        self.semester = None
 
     def __del__(self):
         self.driver.close()
@@ -75,15 +76,20 @@ class Parser:
         except NoSuchElementException:
             print(f"Couldn't find button with xpath = {xpath}")
 
-    def get_table(self) -> bool:
+    def get_table(self, period: str = 'today') -> bool:
         if self.group_chosen:
             self.click_dropdown_menu()
-            self.choose_day_schedule()
+            if period == 'today':
+                self.choose_day_schedule()
+            if period == 'week':
+                self.choose_week_schedule()
             soup = BeautifulSoup(self.driver.page_source, "lxml")
             schedule = soup.find(class_='schedule')
             tabs = schedule.find_all('tr')
             if tabs:
-                self.table_header, self.table_content = schedule.find_all('thead'), schedule.find_all('tbody')
+                self.table_header = schedule.find_all('thead')
+                self.table_content = schedule.find_all('tbody')
+                self.semester = soup.find_all(class_='semestr')
                 return True
             return False
         else:
@@ -97,6 +103,8 @@ if __name__ == '__main__':
     print(parser.groups_names)
     parser.choose_group('ПИН-21')
     parser.choose_day_schedule()
-    parser.get_table()
+    parser.choose_week_schedule()
+    parser.get_table('today')
     print(parser.table_header)
     print(parser.table_content)
+    print(parser.semester)
