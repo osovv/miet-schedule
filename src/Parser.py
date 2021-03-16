@@ -199,7 +199,7 @@ class Parser:
 
 if __name__ == '__main__':
     parser = Parser()
-    parser.choose_group('ПИН-11')
+    parser.choose_group('ПИН-21')
     parser.get_table('today')
     # print(parser.table_body.prettify())
     parser.parse_semester()
