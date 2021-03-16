@@ -1,5 +1,3 @@
-import time
-
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
@@ -9,6 +7,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+
+from Lesson import Lesson
 
 
 class Parser:
@@ -24,7 +24,7 @@ class Parser:
         self.session_id = self.get_session_id()
         self.groups_names = self.get_groups_names()
         self.group_chosen = False
-        self.table_content = None
+        self.table_body = None
         self.table_header = None
         self.semester = None
         self.semester_title = None
@@ -33,6 +33,18 @@ class Parser:
         self.days_names = None
         self.days_types = None
         self.schedule_type = None
+        self.group_name = None
+        self.lesson_entries = None
+        self.cell_text = None
+        self.times = None
+        self.days_schedule = {
+            'Понедельник': [],
+            'Вторник': [],
+            'Среда': [],
+            'Четверг': [],
+            'Пятница': [],
+            'Суббота': [],
+        }
 
     def __del__(self):
         self.driver.close()
@@ -68,6 +80,8 @@ class Parser:
         self.group_chosen = status
         if not status:
             print(f"Could find group {group_name} with group_id = {group_id}")
+        else:
+            self.group_name = group_name
         return status
 
     def get_session_id(self) -> int:
@@ -77,10 +91,11 @@ class Parser:
 
     def click_button(self, xpath: str) -> bool:
         try:
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
+            WebDriverWait(self.driver, 20).until(EC.element_to_be_clickable((By.XPATH, xpath))).click()
             return True
         except NoSuchElementException:
             print(f"Couldn't find button with xpath = {xpath}")
+            return False
 
     def get_table(self, period: str = 'today') -> bool:
         if self.group_chosen:
@@ -96,7 +111,7 @@ class Parser:
             tabs = schedule.find_all('tr')
             if tabs:
                 self.table_header = schedule.find('thead')
-                self.table_content = schedule.find('tbody')
+                self.table_body = schedule.find('tbody')
                 self.semester = soup.find(class_='semestr')
                 return True
             return False
@@ -104,7 +119,7 @@ class Parser:
             print('Must choose group before getting table.')
             return False
 
-    def parse_semester(self):
+    def parse_semester(self) -> None:
         if self.semester is not None:
             self.semester_title, self.week_name = self.semester.text.split('.')
             if self.week_name.startswith('1-й ч'):
@@ -115,13 +130,15 @@ class Parser:
                 self.week_type = 2
             elif self.week_name.startswith('2-й з'):
                 self.week_type = 3
-            # self.semester_title = self.semester_title[:-2]
+            self.semester_title = self.semester_title[:-2]
 
-    def parse_table_header(self):
+    def parse_table_header(self) -> None:
         if self.table_header is not None:
             if self.schedule_type == 'today':
                 self.days_names = []
                 for th in self.table_header.find_all('th', class_='day'):
+                    # print(th.text)
+                    # print(th.text.split(' '))
                     th_date, th_day_name = th.text.split(' ')
                     th_day_name = th_day_name[1:-1]
                     self.days_names.append((th_day_name, th_date))
@@ -135,20 +152,59 @@ class Parser:
                     ('Суббота',),
                 ]
 
+    def parse_table_body(self) -> None:
+        tr_tags = []
+        self.cell_text = []
+        self.times = []
+        for tr in self.table_body.find_all('tr'):
+            tr_tags.append(tr)
+            div_cell = tr.find('div', class_='cell')
+            self.cell_text.append(div_cell.text)
+            div_time = tr.find('th', class_='time').find('div')
+            div_time = str(div_time).replace('<div>', '').replace('<hr/>', '|').replace('<br/>', '|').replace(
+                '</div>', '|')
+            div_items = div_time.split('|')
+            if len(div_items) == 6:
+                del div_items[3:5]
+            self.times.append(div_time)
+            classroom = ''
+            title = ''
+            if div_cell.text != '':
+                classroom = div_cell.text.split(' | ')[0]
+                title = div_cell.text.split(' | ')[1]
+            self.days_schedule[self.days_names[0][0]].append(
+                Lesson(
+                    number=int(div_items[0][0]),
+                    start_time=div_items[1],
+                    end_time=div_items[2],
+                    classroom=classroom,
+                    title=title
+                )
+            )
+
+    def form_report(self) -> str:
+        schedule_string = ''
+        for i in range(7):
+            schedule_string = '{}\n{}'.format(schedule_string, self.days_schedule[self.days_names[0][0]][i])
+        report = '{}\n{}, {}\n{}\n\nГруппа: {}\n{}'.format(
+            self.semester_title,
+            self.days_names[0][0],
+            self.days_names[0][1],
+            self.week_name,
+            self.group_name,
+            schedule_string
+        )
+        return report
+
+
 if __name__ == '__main__':
     parser = Parser()
-    parser.get_table()
-    print(parser.groups_names)
-    parser.choose_group('ПИН-21')
-    parser.choose_day_schedule()
-    parser.choose_week_schedule()
-    parser.get_table('week')
-    print(parser.table_header)
-    print(parser.table_content)
+    parser.choose_group('ПИН-11')
+    parser.get_table('today')
+    # print(parser.table_body.prettify())
     parser.parse_semester()
     parser.parse_table_header()
-    print(parser.semester)
-    print(parser.semester_title)
-    print(parser.week_name)
-    print(parser.week_type)
-    print(parser.days_names)
+    parser.parse_table_body()
+    to_print = parser.form_report()
+    print()
+    print(to_print)
